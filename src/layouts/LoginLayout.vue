@@ -30,7 +30,7 @@
 
 <script>
 //quasar
-import { uid, LocalStorage } from "quasar";
+import { uid, SessionStorage } from "quasar";
 //proxy
 import { requisicao } from "src/services/proxy";
 
@@ -62,8 +62,8 @@ export default {
         name: user ? user.name : this.name,
       };
       //adiciona localmente
-      LocalStorage.set(`@${userNew.name}`, userNew);
-      LocalStorage.set(`@logger`, userNew.name);
+      SessionStorage.set(`@${userNew.name}`, userNew);
+      SessionStorage.set(`@logger`, userNew.name);
 
       this.$router.push("/telegram");
     },

@@ -21,7 +21,7 @@ export const connect = (uuid, name) => {
     })
 
     socket.on(`RECEIVE_MESSAGE-${uuid}`, (data) => {
-        console.log(data);
+        GlobalEvent.emit('event-messageList');
     })
 }
 
@@ -29,7 +29,7 @@ export const loadUser = (uuid, name) => {
     let data = {
         uuid: uuid,
         name: name,
-        image: 'https://cdn.quasar.dev/img/boy-avatar.png',
+        image: name === 'Maria' ? 'https://static.vecteezy.com/system/resources/thumbnails/002/002/257/small/beautiful-woman-avatar-character-icon-free-vector.jpg' : "https://icones.pro/wp-content/uploads/2021/03/avatar-de-personne-icone-homme.png",
         online: true
     }
 
@@ -44,10 +44,11 @@ export const disconnect = (uuid) => {
     socket.emit('DISCONNECT', data)
 }
 
-export const sendMessage = ({ uuid, message }) => {
+export const sendMessage = ({ uuid, userSendUuid, message }) => {
 
     let data = {
         text: message,
+        userSendUuid: userSendUuid,
         userUuid: uuid
     }
 

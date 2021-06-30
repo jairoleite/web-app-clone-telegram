@@ -4,8 +4,8 @@
       <q-toolbar>
         <q-toolbar-title>
           <div class="user-info">
-            <span class="name">Maria</span>
-            <span class="minutes text-warning">visto a 36 minutos</span>
+            <span class="name">{{ userSelected.name }}</span>
+            <span class="minutes text-warning"></span>
           </div>
         </q-toolbar-title>
         <q-space />
@@ -49,7 +49,7 @@
           clickable
           :active="menu.active"
           active-class="active-menu"
-          @click="clickSelectUser"
+          @click="clickSelectUser(menu)"
         >
           <q-item-section avatar>
             <img :src="menu.image" class="user-image" />
@@ -76,7 +76,7 @@
 //services
 import { connect, disconnect } from "src/services/socket";
 //quasar
-import { LocalStorage } from "quasar";
+import { SessionStorage } from "quasar";
 //eventlistenner
 import GlobalEvent from "js-events-listener";
 //proxy
@@ -88,6 +88,7 @@ export default {
     return {
       leftDrawerOpen: true,
       userMenuData: [],
+      userSelected: { name: null },
       searchClear: false,
       eventGlobalUserList: null,
     };
@@ -98,12 +99,12 @@ export default {
       connect(user.uuid, user.name);
     },
     async loadUser() {
-      await requisicao({ method: "GET", url: "/users" }).then((resp) => {
+      await requisicao({
+        method: "GET",
+        url: `/users/all?name=${this.getUserLogger().name}`,
+      }).then((resp) => {
         this.userMenuData = resp.data.map((m) => {
           m.active = false;
-          if (m.uuid === this.getUserSelected()) {
-            m.active = true;
-          }
           return m;
         });
       });
@@ -114,16 +115,27 @@ export default {
     },
 
     getUserLogger() {
-      let userName = LocalStorage.getItem(`@logger`);
-      return LocalStorage.getItem(`@${userName}`);
+      let userName = SessionStorage.getItem(`@logger`);
+      return SessionStorage.getItem(`@${userName}`);
     },
 
     getUserSelected() {
-      return LocalStorage.getItem("@selected");
+      return SessionStorage.getItem("@selected-user");
     },
 
-    clickSelectUser(uuid) {
-      LocalStorage.set("@selected", uuid);
+    async clickSelectUser(menu) {
+      this.userMenuData.map((m) => {
+        if (m.uuid === menu.uuid) {
+          m.active = true;
+        } else {
+          m.active = false;
+        }
+        return m;
+      });
+
+      this.userSelected = menu;
+      SessionStorage.set("@selected-user", menu);
+      GlobalEvent.emit("event-load-message");
     },
   },
   created() {
@@ -134,6 +146,11 @@ export default {
     this.eventGlobalUserList = GlobalEvent.on("event-userList", (data) => {
       data.forEach((eventUser) => {
         eventUser.active = false;
+
+        //se for o mesmo usuário
+        if (eventUser.uuid === this.getUserLogger().uuid) {
+          return;
+        }
         // se existir item no array
         if (
           this.userMenuData.filter((u) => u.uuid === eventUser.uuid).length > 0
@@ -213,6 +230,10 @@ export default {
   height: 11px;
   border-radius: 50%;
   background-color: #3f96d0;
+}
+
+.active-menu {
+  background-color: #242f3d;
 }
 </style>
 

@@ -53,7 +53,9 @@
 import Emoji from "src/components/emoji/Emojis.vue";
 //socket
 import { sendMessage } from "src/services/socket";
-//evento global
+//quasar
+import { SessionStorage } from "quasar";
+//eventlistenner
 import GlobalEvent from "js-events-listener";
 
 export default {
@@ -62,8 +64,6 @@ export default {
   data() {
     return {
       message: "",
-      eventGlobal: null,
-      uuid: null,
     };
   },
   methods: {
@@ -71,27 +71,37 @@ export default {
       this.$refs.message.focus();
     },
     addEmojiChildren(emoji) {
-      this.message += emoji.emoji;
+      this.message += " " + emoji.emoji + " ";
     },
     clickSendMessage() {
       if (!this.message || this.message.trim().length == 0) {
         return;
       }
 
-      sendMessage({ uuid: this.uuid, message: this.message });
+      if (!this.getUserSelected()) {
+        return;
+      }
+
+      sendMessage({
+        uuid: this.getUser().uuid,
+        userSendUuid: this.getUserSelected().uuid,
+        message: this.message,
+      });
+      this.message = "";
+
+      GlobalEvent.emit("event-load-message");
+    },
+    getUserSelected() {
+      return SessionStorage.getItem("@selected-user") || null;
+    },
+
+    getUser() {
+      let userName = SessionStorage.getItem(`@logger`);
+      return SessionStorage.getItem(`@${userName}`);
     },
   },
   mounted() {
     this.focusMessage();
-  },
-  created() {
-    //recebe evento global de selecionar usuário
-    this.eventGlobal = GlobalEvent.on("event-select-user", (data) => {
-      this.uuid = data;
-    });
-  },
-  beforeDestroy() {
-    GlobalEvent.rm(this.eventGlobal);
   },
 };
 </script>
