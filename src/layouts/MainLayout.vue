@@ -43,7 +43,26 @@
           />
         </q-item-label>
 
-        <user-menu v-for="link in userMenu" :key="link.uuid" v-bind="link" />
+        <q-item
+          v-for="(menu, index) in userMenuData"
+          :key="index"
+          clickable
+          :active="menu.active"
+          active-class="active-menu"
+          @click="clickSelectUser"
+        >
+          <q-item-section avatar>
+            <img :src="menu.image" class="user-image" />
+            <div v-show="menu.online" class="online"></div>
+          </q-item-section>
+
+          <q-item-section>
+            <q-item-label class="text-white"> {{ menu.name }}</q-item-label>
+            <q-item-label class="text-warning" caption>
+              <!-- {{ caption }} -->
+            </q-item-label>
+          </q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
@@ -54,40 +73,40 @@
 </template>
 
 <script>
-//component
-import UserMenu from "src/components/UserMenu.vue";
 //services
 import { connect, disconnect } from "src/services/socket";
 //quasar
-import { uid, LocalStorage } from "quasar";
+import { LocalStorage } from "quasar";
 //eventlistenner
 import GlobalEvent from "js-events-listener";
-
-const linksList = [
-  {
-    title: "Maria",
-    caption: "isso ai mesmo ",
-    image: "https://cdn.quasar.dev/img/avatar.png",
-  },
-];
+//proxy
+import { requisicao } from "src/services/proxy";
 
 export default {
   name: "MainLayout",
-  components: {
-    UserMenu,
-  },
   data() {
     return {
       leftDrawerOpen: true,
-      userMenu: [],
+      userMenuData: [],
       searchClear: false,
-      eventGlobal: null,
+      eventGlobalUserList: null,
     };
   },
   methods: {
-    loadUser() {
+    initUser() {
       let user = this.getUserLogger();
       connect(user.uuid, user.name);
+    },
+    async loadUser() {
+      await requisicao({ method: "GET", url: "/users" }).then((resp) => {
+        this.userMenuData = resp.data.map((m) => {
+          m.active = false;
+          if (m.uuid === this.getUserSelected()) {
+            m.active = true;
+          }
+          return m;
+        });
+      });
     },
     disconnectUser() {
       let user = this.getUserLogger();
@@ -98,19 +117,44 @@ export default {
       let userName = LocalStorage.getItem(`@logger`);
       return LocalStorage.getItem(`@${userName}`);
     },
+
+    getUserSelected() {
+      return LocalStorage.getItem("@selected");
+    },
+
+    clickSelectUser(uuid) {
+      LocalStorage.set("@selected", uuid);
+    },
   },
   created() {
+    this.initUser();
     this.loadUser();
 
     //recebe evento global da listagem usuário
-    this.eventGlobal = GlobalEvent.on("event-userList", (data) => {
-      console.log(data);
-      this.userMenu = data;
+    this.eventGlobalUserList = GlobalEvent.on("event-userList", (data) => {
+      data.forEach((eventUser) => {
+        eventUser.active = false;
+        // se existir item no array
+        if (
+          this.userMenuData.filter((u) => u.uuid === eventUser.uuid).length > 0
+        ) {
+          this.userMenuData.map((u) => {
+            if (u.uuid === eventUser.uuid) {
+              u.online = eventUser.online;
+            }
+            return u;
+          });
+        }
+        //senão existir simplesmente adiciona
+        else {
+          this.userMenuData.push(eventUser);
+        }
+      });
     });
   },
   beforeDestroy() {
     this.disconnectUser();
-    GlobalEvent.rm(this.eventGlobal);
+    GlobalEvent.rm(this.eventGlobalUserList);
   },
 };
 </script>
@@ -155,6 +199,20 @@ export default {
   right: 0;
   margin-right: 26px;
   margin-top: 5px;
+}
+
+.user-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+}
+.online {
+  position: absolute;
+  margin: 53px 0px 0px 53px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background-color: #3f96d0;
 }
 </style>
 

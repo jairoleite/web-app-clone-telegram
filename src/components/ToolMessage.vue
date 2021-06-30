@@ -36,18 +36,25 @@
     <q-btn
       class="q-mr-sm"
       padding="md"
+      v-model="message"
       flat
       dense
       size="20px"
       color="info"
       round
       icon="send"
+      @click="clickSendMessage"
     />
   </div>
 </template>
 
 <script>
+//components
 import Emoji from "src/components/emoji/Emojis.vue";
+//socket
+import { sendMessage } from "src/services/socket";
+//evento global
+import GlobalEvent from "js-events-listener";
 
 export default {
   name: "ToolMessage",
@@ -55,6 +62,8 @@ export default {
   data() {
     return {
       message: "",
+      eventGlobal: null,
+      uuid: null,
     };
   },
   methods: {
@@ -64,9 +73,25 @@ export default {
     addEmojiChildren(emoji) {
       this.message += emoji.emoji;
     },
+    clickSendMessage() {
+      if (!this.message || this.message.trim().length == 0) {
+        return;
+      }
+
+      sendMessage({ uuid: this.uuid, message: this.message });
+    },
   },
   mounted() {
-    // this.focusMessage();
+    this.focusMessage();
+  },
+  created() {
+    //recebe evento global de selecionar usuário
+    this.eventGlobal = GlobalEvent.on("event-select-user", (data) => {
+      this.uuid = data;
+    });
+  },
+  beforeDestroy() {
+    GlobalEvent.rm(this.eventGlobal);
   },
 };
 </script>

@@ -31,6 +31,8 @@
 <script>
 //quasar
 import { uid, LocalStorage } from "quasar";
+//proxy
+import { requisicao } from "src/services/proxy";
 
 export default {
   name: "Login",
@@ -41,7 +43,7 @@ export default {
     };
   },
   methods: {
-    submitLogin() {
+    async submitLogin() {
       if (!this.name || this.name.trim().length == 0) {
         this.warning = true;
         setTimeout(() => {
@@ -50,14 +52,18 @@ export default {
         return;
       }
 
-      let userNew = {
-        uuid: uid(),
-        name: this.name,
-      };
+      let user = await requisicao({
+        method: "GET",
+        url: `/users/byname?name=${this.name}`,
+      }).then((resp) => resp.data);
 
+      let userNew = {
+        uuid: user ? user.uuid : uid(),
+        name: user ? user.name : this.name,
+      };
       //adiciona localmente
-      LocalStorage.set(`@${this.name}`, userNew);
-      LocalStorage.set(`@logger`, this.name);
+      LocalStorage.set(`@${userNew.name}`, userNew);
+      LocalStorage.set(`@logger`, userNew.name);
 
       this.$router.push("/telegram");
     },

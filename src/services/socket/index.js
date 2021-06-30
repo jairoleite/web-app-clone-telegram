@@ -1,5 +1,6 @@
 import GlobalEvent from 'js-events-listener'
 
+
 const serverUri = "http://127.0.0.1:9000";
 
 let socket;
@@ -19,6 +20,9 @@ export const connect = (uuid, name) => {
         GlobalEvent.emit('event-userList', data)
     })
 
+    socket.on(`RECEIVE_MESSAGE-${uuid}`, (data) => {
+        console.log(data);
+    })
 }
 
 export const loadUser = (uuid, name) => {
@@ -40,12 +44,11 @@ export const disconnect = (uuid) => {
     socket.emit('DISCONNECT', data)
 }
 
-export const sendMessage = ({ uuid, user, message }) => {
+export const sendMessage = ({ uuid, message }) => {
 
     let data = {
-        uuid: uuid,
-        name: user,
-        message: message
+        text: message,
+        userUuid: uuid
     }
 
     socket.emit('SEND_MESSAGE', data)

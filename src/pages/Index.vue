@@ -55,11 +55,38 @@
 </template>
 
 <script>
+//components
 import ToolMessage from "src/components/ToolMessage.vue";
+//proxy
+import { requisicao } from "src/services/proxy";
+//quasar
+import { LocalStorage } from "quasar";
 
 export default {
   name: "PageCentral",
   components: { ToolMessage },
+  data() {
+    return {
+      messageData: [],
+    };
+  },
+  methods: {
+    async loadMessage() {
+      await requisicao({
+        method: "GET",
+        url: `/messages/${this.getUser().uuid}`,
+      }).then((resp) => {
+        console.log(resp.data);
+      });
+    },
+    getUser() {
+      let userName = LocalStorage.getItem(`@logger`);
+      return LocalStorage.getItem(`@${userName}`);
+    },
+  },
+  created() {
+    this.loadMessage();
+  },
 };
 </script>
 
