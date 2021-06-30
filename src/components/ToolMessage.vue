@@ -14,6 +14,7 @@
       ref="message"
       v-model="message"
       placeholder="Escrever uma mensagem"
+      @keypress.enter="clickSendMessage"
     />
     <q-btn
       id="emojis"
@@ -88,7 +89,7 @@ export default {
         message: this.message,
       });
       this.message = "";
-
+      this.focusMessage();
       GlobalEvent.emit("event-load-message");
     },
     getUserSelected() {

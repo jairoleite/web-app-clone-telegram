@@ -23,6 +23,10 @@ export const connect = (uuid, name) => {
     socket.on(`RECEIVE_MESSAGE-${uuid}`, (data) => {
         GlobalEvent.emit('event-messageList');
     })
+
+    socket.on(`FROM_MESSAGE-${uuid}`, (data) => {
+        GlobalEvent.emit('event-messageList');
+    })
 }
 
 export const loadUser = (uuid, name) => {
